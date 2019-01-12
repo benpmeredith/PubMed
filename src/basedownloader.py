@@ -83,5 +83,24 @@ class BaseDownloader(object):
         tablenames = self.cursor.execute(query).fetchall()
         print(tablenames)
             
+    def download_pdf(self, url):
+        """Download pdf and save it to a file."""
+        
+        #page = urllib.request.urlopen('https://journals.sagepub.com/doi/pdf/10.1177/2158244017700460')
+        page = requests.get(url)
+        with open('./data/pdf/temp.pdf', 'wb') as f:
+            f.write(page.content)
+            
+    def download_page(self, url):
+        """Download specific page for parsing."""
+
+        page = urllib.request.urlopen(url)
+        # parse the page
+        parser = BeautifulSoup(page,'html.parser')
+        print(parser)
+        #print(parser.find_all('meta'))
+        randnum = random.randint(1,5) 
+        time.sleep(randnum)
+            
     def run_all(self):
         raise NotImplementedError

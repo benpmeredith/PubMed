@@ -23,6 +23,7 @@ import xml.etree.ElementTree as ET
 from config import FileConfig
 from basedownloader import BaseDownloader
 from table_schema import get_pubmed_table_schema
+import matplotlib.pyplot as plt
 import sqlite3
 
 class PubMedDownloader(BaseDownloader):
@@ -160,7 +161,7 @@ class PubMedDownloader(BaseDownloader):
         print("Number of new articles to query for search term %s: %d" % (searchterm, len(ids)))
         
         for cnt, uid in enumerate(ids['pmid']):
-            if cnt % 10 == 0:
+            if cnt % 100 == 0:
                 print("Number of summaries downloaded: %d" % (cnt))
             tempdata = self.clean_xml_abstract_page(uid)
             coldata = [tempdata[col] if col in tempdata else '' for col in cols]
@@ -168,6 +169,25 @@ class PubMedDownloader(BaseDownloader):
             self.cursor.execute(query, coldata)
             self.conn.commit()
             time.sleep(3)
+        
+    def clean_xml_abstract_page2(self, uid):
+        """Uses iterparse which is more refined.  TODO:  Fix and update will supercede below."""
+        
+        url = self.entrezurl + 'efetch.fcgi?db=pubmed&id=%s&rettype=abstract&retmode=XML' % (uid)
+        page = urllib.request.urlopen(url)
+        context = ET.iterparse(page, events=("start", "end"))
+        # turn it into an iterator
+        context = iter(context)
+        for event, elem in context:
+            if event == 'start':
+                if elem.tag in ['DateRevised']:
+                    print(elem.tag)
+                    print(elem.text)
+                    print(elem.attrib)
+                    print("starting")
+            else:
+                print(event)
+                print(elem)
         
     def clean_xml_abstract_page(self, uid):
         """Clean XML node for Entrez abstract page.  These pages provide a fairly complete list of variables
@@ -221,9 +241,9 @@ class PubMedDownloader(BaseDownloader):
                 break
             self.search_entrez(kw, numsearch)
         self._display_db_tables()
-        self.graph_searchterms()
         self._export_csv_data()
         self.conn.close()
+        
         
 if __name__ == "__main__":
 
